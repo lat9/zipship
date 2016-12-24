@@ -8,70 +8,6 @@
  * Modified for Zip Code usage by Ruth Woody - http://www.randbhosting.net
  * 1/25/2007 - for Zen-Cart 1.3.7
  */
-/*
-
-  USAGE
-  By default, the module comes with support for 3 postcode zones.  This can be
-  easily changed by editing the line below in the zones constructor
-  that defines $this->num_zones.
-
-  Next, you will want to activate the module by going to the Admin screen,
-  clicking on Modules, then clicking on Shipping.  A list of all shipping
-  modules should appear.  Click on the green dot next to the one labeled
-  zones.php.  A list of settings will appear to the right.  Click on the
-  Edit button.
-
-  PLEASE NOTE THAT YOU WILL LOSE YOUR CURRENT SHIPPING RATES AND OTHER
-  SETTINGS IF YOU TURN OFF THIS SHIPPING METHOD.  Make sure you keep a
-  backup of your shipping settings somewhere at all times.
-
-  If you want an additional handling charge applied to orders that use this
-  method, set the Handling Fee field.
-
-  Next, you will need to define which zip codes are in each zone.  Determining
-  this might take some time and effort.  You should group a set of zip codes
-  that has similar shipping charges for the same weight.
-
-  When you enter these postcode lists, enter them into the Zone X Zipcodes
-  fields, where "X" is the number of the zone.  They should be entered as
-  five digit postcodes.  They should be
-  separated by commas with no spaces or other punctuation. For example:
-    1: 32903,32937
-    2: 32901,32935
-    3: 32940,32904
-  Now you need to set up the shipping/deliver rate tables for each zone.  Again,
-  some time and effort will go into setting the appropriate rates.  You
-  will define a set of weight ranges and the shipping price for each
-  range.  For instance, you might want an order than weighs more than 0
-  and less than or equal to 3 to cost 5.50 to ship to a certain zone.
-  This would be defined by this:  3:5.5
-
-  You should combine a bunch of these rates together in a comma delimited
-  list and enter them into the "Zone X Shipping Table" fields where "X"
-  is the zone number.  For example, this might be used for Zone 1:
-    1:3.5,2:3.95,3:5.2,4:6.45,5:7.7,6:10.4,7:11.85, 8:13.3,9:14.75,10:16.2,11:17.65,
-    12:19.1,13:20.55,14:22,15:23.45
-
-  The above example includes weights over 0 and up to 15.  Note that
-  units are not specified in this explanation since they should be
-  specific to your locale.
-
-  CAVEATS
-  At this time, it does not deal with weights, prices and or units that are
-  above the highest amount    defined.  This will probably be the next area
-  to be improved with the   module.  For now, you could have one last very
-  high range with a very high shipping rate to include those amounts.
-  instance:  999:1000
-*/
-// -----
-// 20161027-lat9: Restructured to work with One-Page Checkout and PHP 7+, v2.0.0
-//
-// - Use PSR indentation
-// - Add "extends base" to class definition
-// - Rename constructor to __construct for PHP 7+ usage
-// - Don't enable the shipping method unless the current ship-to address is configured for the method.
-// - Change usage of the PHP "split" function for PHP 5.3+ usage (it's deprecated).
-//
 class zipship extends base 
 {
     var $code, $title, $description, $enabled, $num_zones;
@@ -79,7 +15,7 @@ class zipship extends base
 // class constructor
     function __construct() 
     {
-        global $order;
+        global $db, $order;
         
         // CUSTOMIZE THIS SETTING FOR THE NUMBER OF ZONES NEEDED
         $this->num_zones = 3;
@@ -98,13 +34,35 @@ class zipship extends base
         } else {
             $this->enabled = false;
         }
+            $enabled_for_zone = false;
+            $check = $db->Execute (
+                "SELECT zone_id 
+                   FROM " . TABLE_ZONES_TO_GEO_ZONES . " 
+                    AND zone_country_id = " . $order->delivery['country']['id'] . " 
+               ORDER BY zone_id"
+            );
+            while (!$check->EOF) {
+                if ($check->fields['zone_id'] < 1 || $check->fields['zone_id'] == $order->delivery['zone_id']) {
+                    $enabled_for_zone = true;
+                    break;
+                }
+                $check->MoveNext();
+            }
+            $this->enabled = $enabled_for_zone;
+        }
 
         if ($this->enabled) {
-            $this->dest_zipcode = $order->delivery['postcode'];
+            // -----
+            // Gather the destination's zipcode, uppercasing and then truncating to the store's minimum zipcode length.
+            //
+            // NOTE:  I'm counting on the address-book generation logic for the store to have properly ensured that the
+            // postcode entered is at least the minimum-length configured!
+            //
+            $this->dest_zipcode = substr (strtoupper ($order->delivery['postcode']), 0, ENTRY_POSTCODE_MIN_LENGTH);
             for ($i=1, $dest_zone = 0; $i<=$this->num_zones; $i++) {
-                $zipcode_table = constant('MODULE_SHIPPING_ZIPSHIP_CODES_' . $i);
-                $zipcode_zones = explode (',', $zipcode_table);
-                if (in_array($this->dest_zipcode, $zipcode_zones)) {
+                $zipcode_table = constant ('MODULE_SHIPPING_ZIPSHIP_CODES_' . $i);
+                $zipcode_zones = explode (',', strtoupper ($zipcode_table));
+                if (in_array ($this->dest_zipcode, $zipcode_zones)) {
                     $dest_zone = $i;
                     break;
                 }
@@ -117,7 +75,7 @@ class zipship extends base
     }
 
 // class methods
-    function quote($method = '') 
+    function quote ($method = '') 
     {
         global $order, $shipping_weight, $shipping_num_boxes, $total_count;
         $dest_zipcode = $this->dest_zipcode;
@@ -129,8 +87,8 @@ class zipship extends base
         $zipcode_table = preg_split ('/[:,]/' , $zipcode_cost);
         for ($i = 0, $n = count ($zipcode_table), $done = false; $i < $n && !$done; $i += 2) {
             switch (MODULE_SHIPPING_ZIPSHIP_METHOD) {
-                case (MODULE_SHIPPING_ZIPSHIP_METHOD == 'Weight'):
-                    if (round($shipping_weight,9) <= $zipcode_table[$i]) {
+                case 'Weight':
+                    if (round ($shipping_weight, 9) <= $zipcode_table[$i]) {
                         $shipping = $zipcode_table[$i+1];
 
                         switch (SHIPPING_BOX_WEIGHT_DISPLAY) {
@@ -141,29 +99,32 @@ class zipship extends base
                                 $show_box_weight = ' (' . $shipping_num_boxes . ' ' . TEXT_SHIPPING_BOXES . ')';
                                 break;
                             case (2):
-                                $show_box_weight = ' (' . number_format($shipping_weight * $shipping_num_boxes,2) . MODULE_SHIPPING_ZIPSHIP_TEXT_UNITS . ')';
+                                $show_box_weight = ' (' . number_format ($shipping_weight * $shipping_num_boxes, 2) . MODULE_SHIPPING_ZIPSHIP_TEXT_UNITS . ')';
                                 break;
                             default:
-                                $show_box_weight = ' (' . $shipping_num_boxes . ' x ' . number_format($shipping_weight,2) . MODULE_SHIPPING_ZIPSHIP_TEXT_UNITS . ')';
+                                $show_box_weight = ' (' . $shipping_num_boxes . ' x ' . number_format ($shipping_weight, 2) . MODULE_SHIPPING_ZIPSHIP_TEXT_UNITS . ')';
                                 break;
                         }
-                        $shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $dest_country . $show_box_weight;
+                        $shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $dest_zipcode . $show_box_weight;
+                        $shipping_cost = ($shipping * $shipping_num_boxes) + constant ('MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone);
                         $done = true;
                     }
                     break;
-                case (MODULE_SHIPPING_ZIPSHIP_METHOD == 'Price'):
+                case 'Price':
 // shipping adjustment
-                    if (($_SESSION['cart']->show_total() - $_SESSION['cart']->free_shipping_prices()) <= $zipcode_table[$i]) {
+                    if ($_SESSION['cart']->show_total() - $_SESSION['cart']->free_shipping_prices () <= $zipcode_table[$i]) {
                         $shipping = $zipcode_table[$i+1];
                         $shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $dest_zipcode;
+                        $shipping_cost = $shipping + constant ('MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone);
                         $done = true;
                     }
                     break;
-                case (MODULE_SHIPPING_ZIPSHIP_METHOD == 'Item'):
+                case 'Item':
 // shipping adjustment
-                    if (($total_count - $_SESSION['cart']->free_shipping_items()) <= $zipcode_table[$i]) {
+                    if ($total_count - $_SESSION['cart']->free_shipping_items () <= $zipcode_table[$i]) {
                         $shipping = $zipcode_table[$i+1];
                         $shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $dest_zipcode;
+                        $shipping_cost = $shipping + constant ('MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone);
                         $done = true;
                     }
                     break;
@@ -175,21 +136,6 @@ class zipship extends base
         if ($shipping == -1) {
             $shipping_cost = 0;
             $shipping_method = MODULE_SHIPPING_ZIPSHIP_UNDEFINED_RATE;
-        } else {
-            switch (MODULE_SHIPPING_ZIPSHIP_METHOD) {
-                case (MODULE_SHIPPING_ZIPSHIP_METHOD == 'Weight'):
-                    // charge per box when done by Price
-                    $shipping_cost = ($shipping * $shipping_num_boxes) + constant('MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone);
-                    break;
-                case (MODULE_SHIPPING_ZIPSHIP_METHOD == 'Price'):
-                    // don't charge per box when done by Price
-                    $shipping_cost = ($shipping) + constant('MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone);
-                    break;
-                case (MODULE_SHIPPING_ZIPSHIP_METHOD == 'Item'):
-                    // don't charge per box when done by Item
-                    $shipping_cost = ($shipping) + constant('MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone);
-                    break;
-            }
         }
 
         $this->quotes = array(
@@ -205,10 +151,10 @@ class zipship extends base
         );
 
         if ($this->tax_class > 0) {
-            $this->quotes['tax'] = zen_get_tax_rate($this->tax_class, $order->delivery['country']['id'], $order->delivery['zone_id']);
+            $this->quotes['tax'] = zen_get_tax_rate ($this->tax_class, $order->delivery['country']['id'], $order->delivery['zone_id']);
         }
 
-        if (zen_not_null($this->icon)) {
+        if (zen_not_null ($this->icon)) {
             $this->quotes['icon'] = zen_image ($this->icon, $this->title);
         }
 
@@ -233,7 +179,7 @@ class zipship extends base
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) values ('Tax Class', 'MODULE_SHIPPING_ZIPSHIP_TAX_CLASS', '0', 'Use the following tax class on the shipping fee.', '6', '0', 'zen_get_tax_class_title', 'zen_cfg_pull_down_tax_classes(', now())");
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Tax Basis', 'MODULE_SHIPPING_ZIPSHIP_TAX_BASIS', 'Shipping', 'On what basis is Shipping Tax calculated. Options are<br />Shipping - Based on customers Shipping Address<br />Billing Based on customers Billing address<br />Store - Based on Store address if Billing/Shipping Zone equals Store zone', '6', '0', 'zen_cfg_select_option(array(\'Shipping\', \'Billing\', \'Store\'), ', now())");
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Sort Order', 'MODULE_SHIPPING_ZIPSHIP_SORT_ORDER', '0', 'Sort order of display.', '6', '0', now())");
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Skip Zipcodes, use a comma separated list of the five character Zip codes', 'MODULE_SHIPPING_ZIPSHIP_SKIPPED', '', 'Disable for the following Zip Codes:', '6', '0', 'zen_cfg_textarea(', now())");
+        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) values ('Shipping Zone', 'MODULE_SHIPPING_ZIPSHIP_ZONE', '0', 'If a zone is selected, only enable this shipping method for that zone.', '6', '0', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
 
         for ($i = 1; $i <= $this->num_zones; $i++) {
             $default_zipcodes = '';
@@ -254,7 +200,7 @@ class zipship extends base
 
     function keys() 
     {
-        $keys = array('MODULE_SHIPPING_ZIPSHIP_STATUS', 'MODULE_SHIPPING_ZIPSHIP_METHOD', 'MODULE_SHIPPING_ZIPSHIP_TAX_CLASS', 'MODULE_SHIPPING_ZIPSHIP_TAX_BASIS', 'MODULE_SHIPPING_ZIPSHIP_SORT_ORDER', 'MODULE_SHIPPING_ZIPSHIP_SKIPPED');
+        $keys = array('MODULE_SHIPPING_ZIPSHIP_STATUS', 'MODULE_SHIPPING_ZIPSHIP_METHOD', 'MODULE_SHIPPING_ZIPSHIP_TAX_CLASS', 'MODULE_SHIPPING_ZIPSHIP_TAX_BASIS', 'MODULE_SHIPPING_ZIPSHIP_ZONE', 'MODULE_SHIPPING_ZIPSHIP_SORT_ORDER');
 
         for ($i=1; $i<=$this->num_zones; $i++) {
             $keys[] = 'MODULE_SHIPPING_ZIPSHIP_CODES_' . $i;
