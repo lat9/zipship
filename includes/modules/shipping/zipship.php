@@ -53,7 +53,7 @@ class zipship extends base
             $this->enabled = $enabled_for_zone;
         }
 
-        if ($this->enabled) {
+        if (is_object ($order) && $this->enabled) {
             // -----
             // Gather the destination's zipcode, uppercasing and then truncating to the store's minimum zipcode length.
             //
