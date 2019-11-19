@@ -41,6 +41,8 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 
 <p>You will activate the module by using your Zen Cart admin's <strong>Modules-&gt;Shipping</strong>.  A list of all shipping modules should appear; click on the line associated with <b>Zipcode Rate</b>.  Once clicked, an <b>install</b> button will appear on the righthand side of the screen; click that button to install the shipping method.</p>
 
+<p>Starting with v3.0.0, you can customize the text displayed to the customer for each of the defined postcode zones by editing <code>/includes/languages/english/modules/shipping[/YOUR_TEMPLATE]/zipship.php</code>.  If your store uses language(s) other than 'english', be sure to make your changes in those additional language files, too!</p>
+
 <p><strong>Note:</strong> If you <b>remove</b> the shipping method, you will lose your current configuration!  Make sure you keep a backup of your shipping settings.</p>
 <p>Once installed, you'll find the following settings for the module:</p>
 <table>
@@ -62,10 +64,6 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
   <tr>
     <td>Tax Class</td>
     <td>If shipping is to be taxed, choose the tax rate to be applied; use <code>--none--</code> if shipping is not to be taxed.</td>
-  </tr>
-  <tr>
-    <td>Tax Basis</td>
-    <td>If shipping is to be taxed, choose the address basis for the tax, one of <b>Shipping</b>, <b>Billing</b> or <b>Store</b>.</td>
   </tr>
   <tr>
     <td>Shipping Zone</td>
@@ -103,17 +101,19 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
     <li>/includes/modules/shipping/zipship.php</li>
   </ol></li> 
 </ol>
+<p><b>Note:</b> For multi-language stores that are upgrading to v3.0.0 or later, be sure to update/merge the english language changes with your additional language(s)' versions.</p>
 
 <h2>Un-install</h2>
 <p>Use your Zen Cart admin's <strong>Modules-&gt;Shipping</strong> page to first <b>remove</b> the shipping-module, then delete the plugin's two (2) files from your store's file-system.</p>
 
 <h2>Version History:</h2>
 <ul>
-  <li>v3.0.0, 2019-11-18:<ol>
+  <li>v3.0.0, 2019-11-19:<ol>
     <li>CHANGE: Restructuring to prevent various PHP notices and warnings from being generated.</li>
     <li>BUGFIX: A zipcode that matched a zipcode list, but failed to match the associated criteria could provide free shipping for the order.</li>
     <li>BUGFIX: &quot;Resurrect&quot; the default <em>00000</em> zipcode 'catch-all'.</li>
     <li>CHANGE: Remove unused &quot;Tax Basis&quot; setting.</li>
+    <li>CHANGE: Enable different title/description for each <em>ZipShip</em> 'zone' defined.</li>
   </ol></li>
   <li>v2.0.1, 2016-12-24:<ol>
     <li>CHANGE: Uppercase a zip-code value prior to checking the lists; truncate the value entered at the minimum allowable by the store's configuration.</li>

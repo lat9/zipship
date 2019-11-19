@@ -1,4 +1,7 @@
 <?php
+// -----
+// Part of the "ZipShip" shipping method by lat9 (https://vinosdefrutastropicales.com)
+// Copyright (c) 2016-2019 Vinos de Frutas Tropicales
 /**
  * @package shippingMethod
  * @copyright Copyright 2003-2006 Zen Cart Development Team
@@ -127,7 +130,7 @@ class zipship extends base
         } else {
             $this->quotes = array(
                 'id' => $this->code,
-                'module' => MODULE_SHIPPING_ZIPSHIP_TEXT_TITLE,
+                'module' => $this->title,
                 'methods' => array(
                     array(
                         'id' => $this->code,
@@ -158,10 +161,47 @@ class zipship extends base
     {
         $quote_found = false;
         
+        // -----
+        // Determine the constant names for the cost-breakdown and handling-fee settings for the
+        // ZipShip zone that matched the order's current shipping location.
+        //
         $zipship_cost = 'MODULE_SHIPPING_ZIPSHIP_COST_' . $dest_zone;
         $zipship_handling = 'MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $dest_zone;
-        if (defined($zipship_cost) && defined($zipship_handling)) {
+        
+        // -----
+        // Starting with v3.0.0, the shipping method uses different title/way text based
+        // on the ZipShip 'zone' definitions, with a fall-back to the previous one-value-per
+        // language constant.
+        //
+        $zipship_title = 'MODULE_SHIPPING_ZIPSHIP_TEXT_TITLE_' . $dest_zone;
+        $zipship_way ='MODULE_SHIPPING_ZIPSHIP_TEXT_WAY_' . $dest_zone;
+        
+        // -----
+        // Both the cost-breakdown and shipping-fee constants must be defined (i.e. present in the configuration)
+        // to continue.  Otherwise, more recent versions of PHP will generate either a notice or a warning.
+        //
+        if (!(defined($zipship_cost) && defined($zipship_handling))) {
+            trigger_error("Missing cost ($zipship_cost) or handling ($zipship_handling) settings; zipship is disabled.", E_USER_WARNING);
+        // -----
+        // The language constante, present in /includes/languages/english/modules/shipping[/YOUR_TEMPLATE]/zipship.php, that
+        // inform the customer about this shipping method must also be present for the zipship shipping method to continue.
+        //
+        // Either the zone-suffixed constant or the contstant used by prior versions for *each* the title/way must be present
+        // to continue.
+        //
+        } elseif (!(defined($zipship_title) || defined('MODULE_SHIPPING_ZIPSHIP_TEXT_TITLE')) || !(defined($zipship_way) || defined('MODULE_SHIPPING_ZIPSHIP_TEXT_WAY'))) {
+            trigger_error("Missing title ($zipship_title) or way ($zipship_way) for the '{$_SESSION['language']}' language; zipship is disabled.", E_USER_WARNING);
+        // -----
+        // Otherwise, we've got all the information needed to see if this order qualifies for ZipShip shipping ...
+        //
+        } else {
             $zipship_handling = (float)constant($zipship_handling);
+            
+            $zipship_title = (defined($zipship_title)) ? $zipship_title : 'MODULE_SHIPPING_ZIPSHIP_TEXT_TITLE';
+            $this->title = constant($zipship_title);
+            
+            $zipship_way = (defined($zipship_way)) ? $zipship_way : 'MODULE_SHIPPING_ZIPSHIP_TEXT_WAY';
+            $zipship_way = constant($zipship_way);
             
             $zipcode_cost = constant($zipship_cost);
             $zipcode_table = preg_split('/[:,]/' , $zipcode_cost);
@@ -185,7 +225,7 @@ class zipship extends base
                                     $show_box_weight = ' (' . $shipping_num_boxes . ' x ' . number_format($shipping_weight, 2) . MODULE_SHIPPING_ZIPSHIP_TEXT_UNITS . ')';
                                     break;
                             }
-                            $this->shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $this->dest_zipcode . $show_box_weight;
+                            $this->shipping_method = $zipship_way . ' ' . $this->dest_zipcode . $show_box_weight;
                             $this->shipping_cost = ($zipcode_value * $shipping_num_boxes) + $zipship_handling;
                             $quote_found = true;
                         }
@@ -194,14 +234,14 @@ class zipship extends base
                     $this->cart_total = $_SESSION['cart']->show_total();
                     $this->free_cart = $_SESSION['cart']->free_shipping_prices();
                         if ($_SESSION['cart']->show_total() - $_SESSION['cart']->free_shipping_prices() <= $zipcode_key) {
-                            $this->shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $this->dest_zipcode;
+                            $this->shipping_method = $zipship_way . ' ' . $this->dest_zipcode;
                             $this->shipping_cost = $zipcode_value + $zipship_handling;
                             $quote_found = true;
                         }
                         break;
                     case 'Item':
                         if ($total_count - $_SESSION['cart']->free_shipping_items() <= $zipcode_key) {
-                            $this->shipping_method = MODULE_SHIPPING_ZIPSHIP_TEXT_WAY . ' ' . $this->dest_zipcode;
+                            $this->shipping_method = $zipship_way . ' ' . $this->dest_zipcode;
                             $this->shipping_cost = $zipcode_value + $zipship_handling;
                             $quote_found = true;
                         }
