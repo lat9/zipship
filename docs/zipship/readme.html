@@ -34,7 +34,7 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 
 <body>
 <h1>ZipShip for Zen Cart 1.5.4 and later</h1>
-<h3>Version 3.0.0 by lat9</h3>
+<h3>Version 3.0.1 by lat9</h3>
 <p>Current Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
 <h2>Usage</h2>
 <p>By default, the module comes with support for <b>3</b> postcode zones.  This can be easily changed by editing the file <code>/includes/modules/shipping/zipship.php</code>, changing the value on the line that reads <code>$this->num_zones = 3;</code>.</p>
@@ -108,6 +108,9 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 
 <h2>Version History:</h2>
 <ul>
+  <li>v3.0.1, 2019-12-15:<ol>
+    <li>BUGFIX: Quotes not returned for the &quot;Weight&quot; or &quot;Item&quot; calculation methods.</li>
+  </ol></li>
   <li>v3.0.0, 2019-11-19:<ol>
     <li>CHANGE: Restructuring to prevent various PHP notices and warnings from being generated.</li>
     <li>BUGFIX: A zipcode that matched a zipcode list, but failed to match the associated criteria could provide free shipping for the order.</li>

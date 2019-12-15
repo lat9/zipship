@@ -14,7 +14,7 @@
 class zipship extends base 
 {
     public $code, $title, $description, $enabled, $num_zones;
-    public $moduleVersion = '3.0.0';
+    public $moduleVersion = '3.0.1';
 
     public function __construct() 
     {
@@ -159,6 +159,8 @@ class zipship extends base
     //
     protected function getQuote($dest_zone)
     {
+        global $shipping_weight, $shipping_num_boxes, $total_count;
+        
         $quote_found = false;
         
         // -----
@@ -231,8 +233,8 @@ class zipship extends base
                         }
                         break;
                     case 'Price':
-                    $this->cart_total = $_SESSION['cart']->show_total();
-                    $this->free_cart = $_SESSION['cart']->free_shipping_prices();
+                        $this->cart_total = $_SESSION['cart']->show_total();
+                        $this->free_cart = $_SESSION['cart']->free_shipping_prices();
                         if ($_SESSION['cart']->show_total() - $_SESSION['cart']->free_shipping_prices() <= $zipcode_key) {
                             $this->shipping_method = $zipship_way . ' ' . $this->dest_zipcode;
                             $this->shipping_cost = $zipcode_value + $zipship_handling;
