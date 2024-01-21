@@ -23,7 +23,7 @@ class zipship extends base
     public int $tax_class;
     public int $num_zones;
 
-    public string $moduleVersion = '3.1.0-beta1';
+    public string $moduleVersion = '3.1.0-beta2';
 
     protected int $_check;
     public $dest_zone;          //- bool|int
@@ -53,10 +53,19 @@ class zipship extends base
         }
 
         $this->enabled = (MODULE_SHIPPING_ZIPSHIP_STATUS === 'True');
-        if ($this->enabled === false || !isset($order)) {
+        if ($this->enabled === false || (IS_ADMIN_FLAG === false && !isset($order))) {
             return;
         }
 
+        if (IS_ADMIN_FLAG === true) {
+            $this->updateConfiguration();
+            return;
+        }
+
+        // -----
+        // Note: At this point, the shipping module is enabled and is running on the
+        // storefront with an order present.
+        //
         $this->tax_class = (int)MODULE_SHIPPING_ZIPSHIP_TAX_CLASS;
 
         // disable when entire cart is free shipping or if in a spider session
@@ -89,27 +98,27 @@ class zipship extends base
         }
 
         // -----
-        // Gather the destination's zipcode, uppercasing and then truncating to the store's minimum zipcode length.
-        //
-        // NOTE:  I'm counting on the address-book generation logic for the store to have properly ensured that the
-        // postcode entered is at least the minimum-length configured!
+        // Gather the destination's zipcode, uppercased.
         //
         $this->dest_zone = false;
         $this->default_zone = false;
-        $this->dest_zipcode = substr(strtoupper($order->delivery['postcode']), 0, (int)ENTRY_POSTCODE_MIN_LENGTH);
+        $this->dest_zipcode = $order->delivery['postcode'];
+        $dest_zipcode = strtoupper(str_replace(' ', '', $this->dest_zipcode));
         for ($i = 1; $i <= $this->num_zones; $i++) {
+            if (!defined("MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_$i")) {
+                define("MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_$i", '');
+            }
             $current_table = "MODULE_SHIPPING_ZIPSHIP_CODES_$i";
             if (defined($current_table)) {
                 $zipcode_table = constant($current_table);
                 if ($zipcode_table === '00000') {
                     $this->default_zone = $i;
                 } else {
-                    $zipcode_zones = explode(',', strtoupper($zipcode_table));
-                    for ($zn = 0, $zc = count($zipcode_zones); $zn < $zc; $zn++) {
-                        $zipcode_zones[$zn] = trim($zipcode_zones[$zn]);
-                    }
-                    if (in_array($this->dest_zipcode, $zipcode_zones)) {
+                    $zipcode_zones = explode(',', strtoupper(str_replace(' ', '', $zipcode_table)));
+                    $zipcode_exclusions = explode(',', strtoupper(str_replace(' ', '', constant("MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_$i"))));
+                    if ($this->checkForMatch($dest_zipcode, $zipcode_zones, $zipcode_exclusions) === true) {
                         $this->dest_zone = $i;
+                        break;
                     }
                 }
             }
@@ -117,6 +126,43 @@ class zipship extends base
         if ($this->dest_zone === false && $this->default_zone === false) {
             $this->enabled = false;
         }
+    }
+
+    protected function updateConfiguration()
+    {
+        global $db;
+
+        for ($i = 1; $i <= $this->num_zones; $i++) {
+            if (defined("MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_$i")) {
+                continue;
+            }
+            $db->Execute(
+                "INSERT INTO " . TABLE_CONFIGURATION . "
+                    (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added)
+                 VALUES
+                    ('Zone " . $i . " Exclusions', 'MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_" . $i . "', '', 'Comma separated list (intervening spaces are allowed) of zip codes that would match Zone " . $i . " Zip Codes, but are to be excluded from the zone\'s pricing.', 6, 0, 'zen_cfg_textarea(', now())"
+            );
+        }
+    }
+
+    protected function checkForMatch(string $dest_zipcode, array $zipcode_zones, array $zipcode_exclusions): bool
+    {
+        $found_match = false;
+        foreach ($zipcode_zones as $next_zone) {
+            if (strpos($dest_zipcode, $next_zone) === 0) {
+                $found_match = true;
+                foreach ($zipcode_exclusions as $next_exclusion) {
+                    if (strpos($dest_zipcode, $next_exclusion) === 0) {
+                        $found_match = false;
+                        break;
+                    }
+                }
+                if ($found_match === true) {
+                    break;
+                }
+            }
+        }
+        return $found_match;
     }
 
     public function quote($method = '')
@@ -200,6 +246,7 @@ class zipship extends base
         //
         if (!defined($zipship_cost) || !defined($zipship_handling)) {
             trigger_error("Missing cost ($zipship_cost) or handling ($zipship_handling) settings; zipship is disabled.", E_USER_WARNING);
+            $this->autoDisable();
         // -----
         // The language constants, present in /includes/languages/english/modules/shipping[/YOUR_TEMPLATE]/zipship.php, that
         // inform the customer about this shipping method must also be present for the zipship shipping method to continue.
@@ -208,6 +255,7 @@ class zipship extends base
         //
         } elseif (!defined($zipship_title) || !defined($zipship_way)) {
             trigger_error("Missing title ($zipship_title) or way ($zipship_way) for the '{$_SESSION['language']}' language; zipship is disabled.", E_USER_WARNING);
+            $this->autoDisable();
         // -----
         // Otherwise, we've got all the information needed to see if this order qualifies for ZipShip shipping ...
         //
@@ -269,6 +317,18 @@ class zipship extends base
         return $quote_found;
     }
 
+    protected function autoDisable()
+    {
+        global $db;
+        $db->Execute(
+            "UPDATE " . TABLE_CONFIGURATION . "
+                SET configuration_value = 'False',
+                    last_modified = now()
+              WHERE configuration_key = 'MODULE_SHIPPING_ZIPSHIP_STATUS'
+              LIMIT 1"
+        );
+    }
+
     public function check(): int
     {
         global $db;
@@ -283,9 +343,9 @@ class zipship extends base
     {
         global $db;
         $db->Execute(
-            "INSERT INTO " . TABLE_CONFIGURATION . " 
-                (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) 
-             VALUES 
+            "INSERT INTO " . TABLE_CONFIGURATION . "
+                (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added)
+             VALUES
                 ('Enable Zip Code Method', 'MODULE_SHIPPING_ZIPSHIP_STATUS', 'True', 'Do you want to offer zip code base shipping?', 6, 0, NULL, 'zen_cfg_select_option([\'True\', \'False\'], ', now()),
 
                 ('Calculation Method', 'MODULE_SHIPPING_ZIPSHIP_METHOD', 'Weight', 'Calculate cost based on Weight, Price or Item?', 6, 0, NULL, 'zen_cfg_select_option([\'Weight\', \'Price\', \'Item\'], ', now()),
@@ -306,7 +366,9 @@ class zipship extends base
                 "INSERT INTO " . TABLE_CONFIGURATION . " 
                     (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) 
                  VALUES 
-                    ('Zone " . $i . " Zip Codes', 'MODULE_SHIPPING_ZIPSHIP_CODES_" . $i . "', '" . $default_zipcodes . "', 'Comma separated list of five character zip codes that are part of Zone " . $i . ".<br>Set as 00000 to indicate all five character zip codes that are not specifically defined.', 6, 0, 'zen_cfg_textarea(', now()),
+                    ('Zone " . $i . " Zip Codes', 'MODULE_SHIPPING_ZIPSHIP_CODES_" . $i . "', '" . $default_zipcodes . "', 'Comma separated list (intervening spaces are allowed) of zip codes that are part of Zone " . $i . ".<br>Set as 00000 to indicate all zip codes that are not specifically defined in other ZipShip Zones.', 6, 0, 'zen_cfg_textarea(', now()),
+
+                    ('Zone " . $i . " Exclusions', 'MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_" . $i . "', '', 'Comma separated list (intervening spaces are allowed) of zip codes that would match Zone " . $i . " Zip Codes, but are to be excluded from the zone\'s pricing.', 6, 0, 'zen_cfg_textarea(', now()),
 
                     ('Zone " . $i . " Shipping Table', 'MODULE_SHIPPING_ZIPSHIP_COST_" . $i . "', '50:5.50,51:0', 'Shipping rates to Zone " . $i . " destinations based on a group of maximum order weights/prices. Example: 3:8.50,7:10.50,... Weight/Price less than or equal to 3 would cost 8.50 for Zone " . $i . " destinations.', 6, 0, 'zen_cfg_textarea(', now()),
 
@@ -324,15 +386,16 @@ class zipship extends base
     public function keys(): array
     {
         $keys = [
-            'MODULE_SHIPPING_ZIPSHIP_STATUS', 
-            'MODULE_SHIPPING_ZIPSHIP_METHOD', 
+            'MODULE_SHIPPING_ZIPSHIP_STATUS',
+            'MODULE_SHIPPING_ZIPSHIP_METHOD',
             'MODULE_SHIPPING_ZIPSHIP_TAX_CLASS',
-            'MODULE_SHIPPING_ZIPSHIP_ZONE', 
+            'MODULE_SHIPPING_ZIPSHIP_ZONE',
             'MODULE_SHIPPING_ZIPSHIP_SORT_ORDER'
         ];
 
         for ($i = 1; $i <= $this->num_zones; $i++) {
             $keys[] = 'MODULE_SHIPPING_ZIPSHIP_CODES_' . $i;
+            $keys[] = 'MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_' . $i;
             $keys[] = 'MODULE_SHIPPING_ZIPSHIP_COST_' . $i;
             $keys[] = 'MODULE_SHIPPING_ZIPSHIP_HANDLING_' . $i;
         }

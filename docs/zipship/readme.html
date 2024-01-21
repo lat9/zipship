@@ -37,12 +37,13 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 <h3>Version 3.1.0 by lat9</h3>
 <p>Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
 <p>Zen Cart Plugins Download Link: <a href="https://www.zen-cart.com/downloads.php?do=file&id=312" target="_blank">https://www.zen-cart.com/downloads.php?do=file&id=312</a></p>
+<p><b>Note:</b> The <em>ZipShip</em> shipping module requires Zen Cart 1.5.8 or later (including 2.0.0) and PHP 7.4 or later for its proper operation.</p>
 <h2>Usage</h2>
-<p>By default, the module comes with support for <b>3</b> postcode zones.  This can be easily changed by editing the file <code>/includes/modules/shipping/zipship.php</code>, changing the value on the line that reads <code>$this->num_zones = 3;</code>.</p>
+<p>By default, the module comes with support for <b>3</b> postcode zones.  This can be easily changed by editing the file <code>/includes/modules/shipping/zipship.php</code>, changing the value on the line that reads <code>$this->num_zones = 3;</code>. If you change the number of zones supported, you <b>must</b> make changes to the shipping module's as-shipped language file to add language settings for those additional zones! If <em>ZipShip</em> finds that a required language setting is not present, it will automatically disable itself on the first storefront load.</p>
 
 <p>You will activate the module by using your Zen Cart admin's <strong>Modules :: Shipping</strong>.  A list of all shipping modules should appear; click on the line associated with <b>Zipcode Rate</b>.  Once clicked, an <b>install</b> button will appear on the righthand side of the screen; click that button to install the shipping method.</p>
 
-<p>Starting with v3.0.0, you can customize the text displayed to the customer for each of the defined postcode zones by editing <code>/includes/languages/english/modules/shipping[/YOUR_TEMPLATE]/zipship.php</code>.  If your store uses language(s) other than 'english', be sure to make your changes in those additional language files, too!</p>
+<p>Starting with v3.0.0, you can customize the text displayed to the customer for each of the defined postcode zones by editing <code>/includes/languages/english/modules/shipping/YOUR_TEMPLATE/zipship.php</code>.  If your store uses language(s) other than 'english', be sure to make your changes in those additional language files, too! <em>Copy</em> ZipShip's as-distributed file (<code>/includes/languages/english/modules/shipping/zipship.php</code>) to the template-specific override directory to make your changes so that you don't lose them on a ZipShip update.</p>
 
 <p><strong>Note:</strong> If you <b>remove</b> the shipping method, you will lose your current configuration!  Make sure you keep a backup of your shipping settings.</p>
 <p>Once installed, you'll find the following settings for the module:</p>
@@ -79,9 +80,16 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
   </tr>
   <tr>
     <td>Zone <em>n</em> Zip Codes</td>
-    <td>Enter the comma-separated (starting with v3.1.0, intervening spaces are OK) list of zipcodes associated with ZipShip Zone #<em>n</em>'s definition.  The length of each zipcode entered should be your store's minimum zipcode length (see below).<br><br><strong>Notes:</strong><ol>
-        <li>An order's zipcode will be matched against this list after it is truncated to your store's minimum zipcode length (<em>Configuration :: Minimum Values :: Post Code</em>).  All zipcode values (both in this table and that for the order) are also uppercased prior to compare, making this plugin more useful in non-US locations.</li>
-        <li>Enter a value of <code>00000</code> (five '0' characters) to identify the <em>Shipping Table</em> and <em>Handling Fee</em> to be used if an order's zip-code matches none of the other zones' zip-code lists.</li>
+    <td>Enter the comma-separated (starting with v3.1.0, intervening spaces are OK) list of zipcode <em>prefixes</em> included in the ZipShip Zone's definition.<br><br><strong>Notes:</strong><ol>
+        <li>An order's zipcode matches against this list if its value <em>starts with</em> any of the zipcode prefixes in this list.  All zipcode values (both in this table and that for the order) are uppercased with all blanks removed prior to compare, making this plugin more useful in non-US locations.  For example, an order's zipcode of <var>34996-3111</var> or <var>34996</var> will match <var>34996</var>; an order's zipcode of <var>L7E 1H7</var> or <var>L7E1H7</var> or <var>l7e1h7</var> will match <var>L7E</var>.</li>
+        <li>Enter a value of <code>00000</code> (<em>specifically</em> five '0' characters) to identify the <em>Shipping Table</em> and <em>Handling Fee</em> to be used if an order's zipcode matches none of the other zones' zip-code lists.</li>
+    </td>
+  </tr>
+  <tr>
+    <td>Zone <em>n</em> Exclusions</td>
+    <td>Enter the comma-separated (intervening spaces are OK) list of zipcodes to be <em>excluded from</em> the ZipShip Zone's definition.<br><br><strong>Notes:</strong><ol>
+        <li>This setting was added in v3.1.0 of <em>ZipShip</em>.</li>
+        <li>An order's zipcode <em>matches</em> one of the zone's Zip Codes but also matches (using the same method as above) any of the zipcodes in this exclusions list, the order's zipcode no longer matches for the ZipShip Zone! Using the example above, if an exclusion of <var>L7E 1H7</var> is configured, an order's zipcode of that value will not be considered a match for the ZipShip Zone.</li>
     </td>
   </tr>
   <tr>
@@ -109,8 +117,9 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 
 <h2>Version History:</h2>
 <ul>
-  <li>v3.1.0, 2024-01-19:<ol>
+  <li>v3.1.0, 2024-01-21:<ol>
     <li>BUGFIX: <b>Major</b> restructure, in support of Zen Cart 1.5.8+ (including 2.0.0) and PHP versions up to 8.3.</li>
+    <li>CHANGE: Zip Code values entered are now considered <em>prefixes</em>; an Exclusions list is added to each ZipShip Zone's configuration settings.</li>
   </ol></li>
   <li>v3.0.1, 2019-12-15:<ol>
     <li>BUGFIX: Quotes not returned for the &quot;Weight&quot; or &quot;Item&quot; calculation methods.</li>
