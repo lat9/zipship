@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="icon" href="../vinos_favicon.ico" type="image/x-icon" />
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="../vinos_favicon.ico" type="image/x-icon">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZipShip: A Zen Cart Shipping Method</title>
 <style>
 <!--
@@ -33,13 +33,14 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 </head>
 
 <body>
-<h1>ZipShip for Zen Cart 1.5.4 and later</h1>
-<h3>Version 3.0.1 by lat9</h3>
-<p>Current Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
+<h1>ZipShip for Zen Cart 1.5.8 and later</h1>
+<h3>Version 3.1.0 by lat9</h3>
+<p>Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
+<p>Zen Cart Plugins Download Link: <a href="https://www.zen-cart.com/downloads.php?do=file&id=312" target="_blank">https://www.zen-cart.com/downloads.php?do=file&id=312</a></p>
 <h2>Usage</h2>
 <p>By default, the module comes with support for <b>3</b> postcode zones.  This can be easily changed by editing the file <code>/includes/modules/shipping/zipship.php</code>, changing the value on the line that reads <code>$this->num_zones = 3;</code>.</p>
 
-<p>You will activate the module by using your Zen Cart admin's <strong>Modules-&gt;Shipping</strong>.  A list of all shipping modules should appear; click on the line associated with <b>Zipcode Rate</b>.  Once clicked, an <b>install</b> button will appear on the righthand side of the screen; click that button to install the shipping method.</p>
+<p>You will activate the module by using your Zen Cart admin's <strong>Modules :: Shipping</strong>.  A list of all shipping modules should appear; click on the line associated with <b>Zipcode Rate</b>.  Once clicked, an <b>install</b> button will appear on the righthand side of the screen; click that button to install the shipping method.</p>
 
 <p>Starting with v3.0.0, you can customize the text displayed to the customer for each of the defined postcode zones by editing <code>/includes/languages/english/modules/shipping[/YOUR_TEMPLATE]/zipship.php</code>.  If your store uses language(s) other than 'english', be sure to make your changes in those additional language files, too!</p>
 
@@ -78,14 +79,14 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
   </tr>
   <tr>
     <td>Zone <em>n</em> Zip Codes</td>
-    <td>Enter the comma-separated (<b>no</b> intervening spaces) list of zipcodes associated with ZipShip Zone #<em>n</em>'s definition.  The length of each zipcode entered should be your store's minimum zipcode length (see below).<br /><br /><strong>Notes:</strong><ol>
-        <li>An order's zipcode will be matched against this list after it is truncated to your store's minimum zipcode length (<em>Configuration-&gt;Minimum Values-&gt;Post Code</em>).  All zipcode values (both in this table and that for the order) are also uppercased prior to compare, making this plugin more useful in non-US locations.</li>
+    <td>Enter the comma-separated (starting with v3.1.0, intervening spaces are OK) list of zipcodes associated with ZipShip Zone #<em>n</em>'s definition.  The length of each zipcode entered should be your store's minimum zipcode length (see below).<br><br><strong>Notes:</strong><ol>
+        <li>An order's zipcode will be matched against this list after it is truncated to your store's minimum zipcode length (<em>Configuration :: Minimum Values :: Post Code</em>).  All zipcode values (both in this table and that for the order) are also uppercased prior to compare, making this plugin more useful in non-US locations.</li>
         <li>Enter a value of <code>00000</code> (five '0' characters) to identify the <em>Shipping Table</em> and <em>Handling Fee</em> to be used if an order's zip-code matches none of the other zones' zip-code lists.</li>
     </td>
   </tr>
   <tr>
     <td>Zone <em>n</em> Shipping Table</td>
-    <td>This field defines the rate-table for ZipShip Zone #<em>n</em>.  The table's values are used in conjunction with the <em>Calculation Method</em> setting and contains one or more <em>value</em><b>:</b><em>cost</em> fields.<br /><br />For instance, if you have set your <em>Calculation Method</em> to <b>Weight</b> and an order that weights 3 pounds (or kilograms, if that's your store's unit-of-weight) or less should have a shipping cost of $5.50, you'll set this field to <code>3:5.50</code>.  Determine all rates to be associated with this zone and list the <em>value:cost</em> pairs, separated by commas (,) with incrementing <em>value</em> portions, e.g. <code>1:3.5,2:3.95,3:5.2,4:6.45,5:7.7,6:10.4,7:11.85,8:13.3,9:14.75,10:16.2</code>.<br /><br />The above example includes costs for values between 0 and 10 &mdash; <b>only</b>. If you want a fixed-cost for orders that are <em>over</em> an amount, specify the final entry in the list as a large value (like 9999) followed by that final cost.</td>
+    <td>This field defines the rate-table for ZipShip Zone #<em>n</em>.  The table's values are used in conjunction with the <em>Calculation Method</em> setting and contains one or more <em>value</em><b>:</b><em>cost</em> fields.<br><br>For instance, if you have set your <em>Calculation Method</em> to <b>Weight</b> and an order that weights 3 pounds (or kilograms, if that's your store's unit-of-weight) or less should have a shipping cost of $5.50, you'll set this field to <code>3:5.50</code>.  Determine all rates to be associated with this zone and list the <em>value:cost</em> pairs, separated by commas (,) with incrementing <em>value</em> portions, e.g. <code>1:3.5,2:3.95,3:5.2,4:6.45,5:7.7,6:10.4,7:11.85,8:13.3,9:14.75,10:16.2</code>.<br><br>The above example includes costs for values between 0 and 10 &mdash; <b>only</b>. If you want a fixed-cost for orders that are <em>over</em> an amount, specify the final entry in the list as a large value (like 9999) followed by that final cost.</td>
   </tr>
   <tr>
     <td>Zone <em>n</em> Handling Fee</td>
@@ -104,10 +105,13 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 <p><b>Note:</b> For multi-language stores that are upgrading to v3.0.0 or later, be sure to update/merge the english language changes with your additional language(s)' versions.</p>
 
 <h2>Un-install</h2>
-<p>Use your Zen Cart admin's <strong>Modules-&gt;Shipping</strong> page to first <b>remove</b> the shipping-module, then delete the plugin's two (2) files from your store's file-system.</p>
+<p>Use your Zen Cart admin's <strong>Modules :: Shipping</strong> page to first <b>remove</b> the shipping-module, then delete the plugin's two (2) files from your store's file-system.</p>
 
 <h2>Version History:</h2>
 <ul>
+  <li>v3.1.0, 2024-01-19:<ol>
+    <li>BUGFIX: <b>Major</b> restructure, in support of Zen Cart 1.5.8+ (including 2.0.0) and PHP versions up to 8.3.</li>
+  </ol></li>
   <li>v3.0.1, 2019-12-15:<ol>
     <li>BUGFIX: Quotes not returned for the &quot;Weight&quot; or &quot;Item&quot; calculation methods.</li>
   </ol></li>
