@@ -23,7 +23,7 @@ class zipship extends base
     public int $tax_class;
     public int $num_zones;
 
-    public string $moduleVersion = '3.1.0-beta2';
+    public string $moduleVersion = '3.1.0';
 
     protected int $_check;
     public $dest_zone;          //- bool|int
@@ -114,8 +114,8 @@ class zipship extends base
                 if ($zipcode_table === '00000') {
                     $this->default_zone = $i;
                 } else {
-                    $zipcode_zones = explode(',', strtoupper(str_replace(' ', '', $zipcode_table)));
-                    $zipcode_exclusions = explode(',', strtoupper(str_replace(' ', '', constant("MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_$i"))));
+                    $zipcode_zones = explode(',', strtoupper(str_replace(" \r\n\t", '', $zipcode_table)));
+                    $zipcode_exclusions = explode(',', strtoupper(str_replace(" \r\n\t", '', constant("MODULE_SHIPPING_ZIPSHIP_EXCLUSIONS_$i"))));
                     if ($this->checkForMatch($dest_zipcode, $zipcode_zones, $zipcode_exclusions) === true) {
                         $this->dest_zone = $i;
                         break;
@@ -149,10 +149,10 @@ class zipship extends base
     {
         $found_match = false;
         foreach ($zipcode_zones as $next_zone) {
-            if (strpos($dest_zipcode, $next_zone) === 0) {
+            if ($next_zone !== '' && strpos($dest_zipcode, $next_zone) === 0) {
                 $found_match = true;
                 foreach ($zipcode_exclusions as $next_exclusion) {
-                    if (strpos($dest_zipcode, $next_exclusion) === 0) {
+                    if ($next_exclusion !== '' && strpos($dest_zipcode, $next_exclusion) === 0) {
                         $found_match = false;
                         break;
                     }

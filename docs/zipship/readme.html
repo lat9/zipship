@@ -20,6 +20,7 @@ H1, H2, H3, H4 { font-weight: bold; }
 h1 { font-size: 20px; color: #c19a6b; border-bottom: 2px solid #c19a6b; }
 h2 { font-size: 16px; border-top: 2px solid #c19a6b; padding-top: 10px; }
 code { padding: 0; }
+pre { margin-left: 20px; }
 ol li { margin-left: 0; }
 ol li ol li, ul li ul li, ul li, ol li { margin-top: 5px; margin-bottom: 5px; }
 code.pad { padding-left: 25px; }
@@ -37,13 +38,17 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 <h3>Version 3.1.0 by lat9</h3>
 <p>Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
 <p>Zen Cart Plugins Download Link: <a href="https://www.zen-cart.com/downloads.php?do=file&id=312" target="_blank">https://www.zen-cart.com/downloads.php?do=file&id=312</a></p>
-<p><b>Note:</b> The <em>ZipShip</em> shipping module requires Zen Cart 1.5.8 or later (including 2.0.0) and PHP 7.4 or later for its proper operation.</p>
+<p><b>Note:</b> The <em>ZipShip</em> shipping module requires Zen Cart 1.5.8 or later (including 2.0.0) and PHP <b>7.4</b> or later for its proper operation.</p>
 <h2>Usage</h2>
-<p>By default, the module comes with support for <b>3</b> postcode zones.  This can be easily changed by editing the file <code>/includes/modules/shipping/zipship.php</code>, changing the value on the line that reads <code>$this->num_zones = 3;</code>. If you change the number of zones supported, you <b>must</b> make changes to the shipping module's as-shipped language file to add language settings for those additional zones! If <em>ZipShip</em> finds that a required language setting is not present, it will automatically disable itself on the first storefront load.</p>
+<p><b>Note:</b> By default, the module comes with support for <b>3</b> postcode zones.  This can be easily changed by editing the file <var>/includes/modules/shipping/zipship.php</var>, changing the value on the line that reads <var>$this->num_zones = 3;</var>. If you change the number of zones supported, you <b>must</b> make changes to the shipping module's as-shipped language file to add two (2) language constants for each additional zones! If <em>ZipShip</em> finds that a required language setting is not present, it will <em>automatically disable</em> its configuration setting on the first storefront load.  The two constants to be added per zone are shown below; just replace the <var>_n</var> with the Zone's number, e.g. <var>_4</var>, for each constant.</p>
+<pre>
+define('MODULE_SHIPPING_ZIPSHIP_TEXT_TITLE_n', 'Zipcode Rate');
+define('MODULE_SHIPPING_ZIPSHIP_TEXT_WAY_n', 'Deliver To Zipcode: ');
+</pre>
 
 <p>You will activate the module by using your Zen Cart admin's <strong>Modules :: Shipping</strong>.  A list of all shipping modules should appear; click on the line associated with <b>Zipcode Rate</b>.  Once clicked, an <b>install</b> button will appear on the righthand side of the screen; click that button to install the shipping method.</p>
 
-<p>Starting with v3.0.0, you can customize the text displayed to the customer for each of the defined postcode zones by editing <code>/includes/languages/english/modules/shipping/YOUR_TEMPLATE/zipship.php</code>.  If your store uses language(s) other than 'english', be sure to make your changes in those additional language files, too! <em>Copy</em> ZipShip's as-distributed file (<code>/includes/languages/english/modules/shipping/zipship.php</code>) to the template-specific override directory to make your changes so that you don't lose them on a ZipShip update.</p>
+<p>Starting with v3.0.0, you can customize the text displayed to the customer for each of the defined postcode zones by editing <var>/includes/languages/english/modules/shipping/YOUR_TEMPLATE/zipship.php</var>.  If your store uses language(s) other than 'english', be sure to make your changes in those additional language files, too! <em>Copy</em> ZipShip's as-distributed file (<var>/includes/languages/english/modules/shipping/zipship.php</var>) to the template-specific override directory to make your changes so that you don't lose them on a ZipShip update.</p>
 
 <p><strong>Note:</strong> If you <b>remove</b> the shipping method, you will lose your current configuration!  Make sure you keep a backup of your shipping settings.</p>
 <p>Once installed, you'll find the following settings for the module:</p>
@@ -65,11 +70,11 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
   </tr>
   <tr>
     <td>Tax Class</td>
-    <td>If shipping is to be taxed, choose the tax rate to be applied; use <code>--none--</code> if shipping is not to be taxed.</td>
+    <td>If shipping is to be taxed, choose the tax rate to be applied; use <var>--none--</var> if shipping is not to be taxed.</td>
   </tr>
   <tr>
     <td>Shipping Zone</td>
-    <td>Use the dropdown selection to limit the shipping zone for which <em>ZipShip</em> is to be enabled.  If <em>ZipShip</em> should always be enabled, use the value <code>--none--</code>.</td>
+    <td>Use the dropdown selection to limit the shipping zone for which <em>ZipShip</em> is to be enabled.  If <em>ZipShip</em> should always be enabled, use the value <var>--none--</var>.</td>
   </tr>
   <tr>
     <td>Sort Order</td>
@@ -117,9 +122,10 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 
 <h2>Version History:</h2>
 <ul>
-  <li>v3.1.0, 2024-01-21:<ol>
+  <li>v3.1.0, 2024-01-22:<ol>
     <li>BUGFIX: <b>Major</b> restructure, in support of Zen Cart 1.5.8+ (including 2.0.0) and PHP versions up to 8.3.</li>
     <li>CHANGE: Zip Code values entered are now considered <em>prefixes</em>; an Exclusions list is added to each ZipShip Zone's configuration settings.</li>
+    <li>BUGFIX: Correct <var>PHP Warning: strpos(): Empty needle</var> logs.</li>
   </ol></li>
   <li>v3.0.1, 2019-12-15:<ol>
     <li>BUGFIX: Quotes not returned for the &quot;Weight&quot; or &quot;Item&quot; calculation methods.</li>
@@ -137,7 +143,7 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
     <li>CHANGE: Add configuration setting: <b>Shipping Zone</b>.</li>
     <li>BUGFIX: Delete <em>all</em> module settings on a remove action, especially since the number of &quot;keys&quot; can be changed!</li>
   </ol></li>
-  <li>v2.0.0, 2016-10-30, <b>Major restructuring</b>, changes to enable interoperability with <a href="http://vinosdefrutastropicales.com/index.php?main_page=product_info&cPath=2_7&products_id=69" target="_blank">One-Page Checkout</a>:<ol>
+  <li>v2.0.0, 2016-10-30, <b>Major restructuring</b>, changes to enable interoperability with <a href="https://vinosdefrutastropicales.com/index.php?main_page=product_info&cPath=2_7&products_id=69" target="_blank">One-Page Checkout</a>:<ol>
     <li>CHANGE: Rename constructor for PHP 7.0+ usage.</li>
     <li>BUGFIX: Don't enable unless the current ship-to address qualifies.</li>
     <li>BUGFIX: Don't use the PHP split function; it's been deprecated.</li>
