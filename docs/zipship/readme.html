@@ -35,7 +35,7 @@ th:first-child, td:first-child { width: 15em; font-weight: bold; }
 
 <body>
 <h1>ZipShip for Zen Cart 1.5.8 and later</h1>
-<h3>Version 3.1.0 by lat9</h3>
+<h3>Version 3.1.1 by lat9</h3>
 <p>Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
 <p>Zen Cart Plugins Download Link: <a href="https://www.zen-cart.com/downloads.php?do=file&id=312" target="_blank">https://www.zen-cart.com/downloads.php?do=file&id=312</a></p>
 <p><b>Note:</b> The <em>ZipShip</em> shipping module requires Zen Cart 1.5.8 or later (including 2.0.0) and PHP <b>7.4</b> or later for its proper operation.</p>
@@ -122,6 +122,9 @@ define('MODULE_SHIPPING_ZIPSHIP_TEXT_WAY_n', 'Deliver To Zipcode: ');
 
 <h2>Version History:</h2>
 <ul>
+  <li>v3.1.1, 2024-03-18:<ol>
+    <li>BUGFIX: Intervening 'whitespace' characters in zipcode lists result in mismatch.</li>
+  </ol></li>
   <li>v3.1.0, 2024-01-22:<ol>
     <li>BUGFIX: <b>Major</b> restructure, in support of Zen Cart 1.5.8+ (including 2.0.0) and PHP versions up to 8.3.</li>
     <li>CHANGE: Zip Code values entered are now considered <em>prefixes</em>; an Exclusions list is added to each ZipShip Zone's configuration settings.</li>
