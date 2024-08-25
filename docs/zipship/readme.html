@@ -6,17 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZipShip: A Zen Cart Shipping Method</title>
 <style>
-<!--
-A, A:active, A:visited { color: #006666; text-decoration: none; }
-A:hover { color:#00CC99; text-decoration: underline; }
-BODY, P, H1, H2, H3, H4, H5, H6, LI, TD, DD, DT, table {
-  font-family: Verdana, AvantGarde, Tahoma, Arial, sans-serif;
+a, a:active, a:visited { color: #006666; text-decoration: none; }
+a:hover { color:#00cc99; text-decoration: underline; }
+body, p, h1, h2, h3, h4, h5, h6, li, td, dd, dt, table {
+  font-family: verdana, avantgarde, tahoma, arial, sans-serif;
   font-size: 10pt;
   color: black;
   padding: 0px;
   margin: 20px;
 }
-H1, H2, H3, H4 { font-weight: bold; }
+h1, h2, h3, h4 { font-weight: bold; }
 h1 { font-size: 20px; color: #c19a6b; border-bottom: 2px solid #c19a6b; }
 h2 { font-size: 16px; border-top: 2px solid #c19a6b; padding-top: 10px; }
 code { padding: 0; }
@@ -29,13 +28,14 @@ table { border: 1px solid #333; padding: 5px; border-collapse: collapse; text-al
 td, th { padding: 3px 5px; border: 1px solid #333; border-collapse: collapse; }
 th:first-child, td:first-child { width: 15em; font-weight: bold; }
 .row-comment { text-align: center; font-weight: bold; background-color: #deb887; }
--->
+.removed { text-decoration: line-through; }
+.added { color: #1f45fc; }
 </style>
 </head>
 
 <body>
 <h1>ZipShip for Zen Cart 1.5.8 and later</h1>
-<h3>Version 3.1.1 by lat9</h3>
+<h3>Version 3.1.2 by lat9</h3>
 <p>Support Thread at Zen Cart Forums: <a href="https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread" target="_blank">https://www.zen-cart.com/showthread.php?221303-ZipShip-Support-Thread</a></p>
 <p>Zen Cart Plugins Download Link: <a href="https://www.zen-cart.com/downloads.php?do=file&id=312" target="_blank">https://www.zen-cart.com/downloads.php?do=file&id=312</a></p>
 <p><b>Note:</b> The <em>ZipShip</em> shipping module requires Zen Cart 1.5.8 or later (including 2.0.0) and PHP <b>7.4</b> or later for its proper operation.</p>
@@ -111,7 +111,7 @@ define('MODULE_SHIPPING_ZIPSHIP_TEXT_WAY_n', 'Deliver To Zipcode: ');
 <ol>
   <li>Create a backup of your Zen Cart's database and files.</li>
   <li>Copy the plugin's new files to your store's file-system:<ol>
-    <li>/includes/languages/english/modules/shipping/zipship.php</li>
+    <li>/includes/languages/english/modules/shipping/lang.zipship.php</li>
     <li>/includes/modules/shipping/zipship.php</li>
   </ol></li> 
 </ol>
@@ -122,6 +122,9 @@ define('MODULE_SHIPPING_ZIPSHIP_TEXT_WAY_n', 'Deliver To Zipcode: ');
 
 <h2>Version History:</h2>
 <ul>
+  <li>v3.1.2, 2024-08-25:<ol>
+    <li>INTROP: Rename <code class="removed">/includes/languages/english/modules/shipping/zipship.php</code> to <code class="added">lang.zipship.php</code>; required for zc210 interoperability.</li>
+  </ol></li>
   <li>v3.1.1, 2024-03-18:<ol>
     <li>BUGFIX: Intervening 'whitespace' characters in zipcode lists result in mismatch.</li>
   </ol></li>

@@ -23,7 +23,7 @@ class zipship extends base
     public int $tax_class;
     public int $num_zones;
 
-    public string $moduleVersion = '3.1.1';
+    public string $moduleVersion = '3.1.2';
 
     protected int $_check;
     public $dest_zone;          //- bool|int
