@@ -1,7 +1,7 @@
 <?php
 // -----
 // Part of the "ZipShip" shipping method by lat9 (https://vinosdefrutastropicales.com)
-// Copyright (c) 2016-2024 Vinos de Frutas Tropicales
+// Copyright (c) 2016-2025 Vinos de Frutas Tropicales
 //
 /**
  * @package shippingMethod
@@ -23,7 +23,7 @@ class zipship extends base
     public int $tax_class;
     public int $num_zones;
 
-    public string $moduleVersion = '3.1.2';
+    public string $moduleVersion = '3.1.3';
 
     protected int $_check;
     public $dest_zone;          //- bool|int
@@ -53,6 +53,7 @@ class zipship extends base
         }
 
         $this->enabled = (MODULE_SHIPPING_ZIPSHIP_STATUS === 'True');
+        $this->tax_class = (int)MODULE_SHIPPING_ZIPSHIP_TAX_CLASS;
         if ($this->enabled === false || (IS_ADMIN_FLAG === false && !isset($order))) {
             return;
         }
@@ -66,7 +67,6 @@ class zipship extends base
         // Note: At this point, the shipping module is enabled and is running on the
         // storefront with an order present.
         //
-        $this->tax_class = (int)MODULE_SHIPPING_ZIPSHIP_TAX_CLASS;
 
         // disable when entire cart is free shipping or if in a spider session
         if (!empty($spider_session) || !zen_get_shipping_enabled($this->code)) {
